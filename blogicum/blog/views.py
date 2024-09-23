@@ -1,22 +1,32 @@
 from django.http import Http404
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
+
+from blog.models import Category, Post
 
 
 def index(request):
     template_name = 'blog/index.html'
-    rev_posts = posts[::-1]
+    rev_posts = Post.objects.filter(
+        is_published=True,
+        pub_date__lte=timezone.now(),
+        category__is_published=True
+    ).order_by('-pub_date')[:5]
     context = {
-        'posts': rev_posts,
+        'post_list': rev_posts,
     }
     return render(request, template_name, context)
 
 
 def post_detail(request, id):
-    posts_with_id = [post for post in posts if post['id'] == id]
-    if len(posts_with_id) == 0:
-        raise Http404
-    post = posts_with_id[0]
-
+    current_time = timezone.now()
+    post = get_object_or_404(
+        Post,
+        pk=id,
+        is_published=True,
+        pub_date__lte=current_time,
+        category__is_published=True
+    )
     template_name = 'blog/detail.html'
     context = {
         'post': post,
@@ -26,9 +36,15 @@ def post_detail(request, id):
 
 def category_posts(request, category_slug):
     template_name = 'blog/category.html'
+    category = get_object_or_404(Category, slug=category_slug, is_published=True)
+    current_time = timezone.now()
+    posts = Post.objects.filter(
+        category=category,
+        is_published=True,
+        pub_date__lte=current_time
+    ).order_by('-pub_date')
     context = {
-        'category': {
-            'slug': category_slug,
-        }
+        'category': category,
+        'post_list': posts
     }
     return render(request, template_name, context)
