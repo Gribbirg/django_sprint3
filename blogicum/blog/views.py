@@ -1,8 +1,6 @@
-from django.http import Http404
+from blog.models import Category, Post
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-
-from blog.models import Category, Post
 
 
 def index(request):
@@ -36,7 +34,11 @@ def post_detail(request, id):
 
 def category_posts(request, category_slug):
     template_name = 'blog/category.html'
-    category = get_object_or_404(Category, slug=category_slug, is_published=True)
+    category = get_object_or_404(
+        Category,
+        slug=category_slug,
+        is_published=True,
+    )
     current_time = timezone.now()
     posts = Post.objects.filter(
         category=category,
